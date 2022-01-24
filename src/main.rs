@@ -2,6 +2,7 @@ mod chip8;
 mod display;
 mod font;
 mod keypad;
+mod speaker;
 
 use crate::chip8::Chip8;
 

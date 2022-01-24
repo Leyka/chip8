@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use crate::{display::Display, font::*, keypad::Keypad};
+use crate::{display::Display, font::*, keypad::Keypad, speaker::Speaker};
 
 // Chip8 has 4KB of RAM
 const MEMORY_SIZE: usize = 4096;
@@ -24,6 +24,7 @@ pub struct Chip8 {
     // Peripherals
     display: Display,
     keypad: Keypad,
+    speaker: Speaker,
 }
 
 impl Chip8 {
@@ -39,6 +40,7 @@ impl Chip8 {
             sound_timer: 0,
             display: Display::new(),
             keypad: Keypad::new(),
+            speaker: Speaker::new(),
         }
     }
 
