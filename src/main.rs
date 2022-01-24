@@ -6,6 +6,6 @@ mod keypad;
 use crate::chip8::Chip8;
 
 fn main() {
-    let chip8 = Chip8::new();
-    println!("Hello, world!");
+    let mut chip8 = Chip8::new();
+    chip8.load_rom(&"roms/PONG");
 }
