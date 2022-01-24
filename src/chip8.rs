@@ -14,7 +14,7 @@ pub struct Chip8 {
     registers: [u8; 16],
     i: usize,
     // Stack & stack pointer
-    stack: [u16; 16],
+    stack: [usize; 16],
     sp: usize,
     // Memory
     memory: [u8; MEMORY_SIZE],
@@ -94,7 +94,8 @@ impl Chip8 {
             (0, 0, 0xe, 0) => self.op_00e0(),
             (0, 0, 0xe, 0xe) => self.op_00ee(),
             (0x1, _, _, _) => self.op_1nnn(nnn),
-            _ => panic!("Unrecognized or unsupported opcode"),
+            (0x2, _, _, _) => self.op_2nnn(nnn),
+            _ => panic!("Unrecognized or unsupported opcode: {:#02x}", opcode),
         };
     }
 
@@ -105,12 +106,21 @@ impl Chip8 {
 
     /// RET - Return from a subroutine.
     fn op_00ee(&mut self) {
+        // "Remove" return address from the stack
         self.sp -= 1;
-        self.pc = (self.stack[self.sp]) as usize;
+        self.pc = self.stack[self.sp];
     }
 
     /// JP - Jump to location nnn.
     fn op_1nnn(&mut self, nnn: usize) {
+        self.pc = nnn;
+    }
+
+    /// CALL - Call subroutine at nnn.
+    fn op_2nnn(&mut self, nnn: usize) {
+        // Save the current PC to go back to where it was when it hit the CALL
+        self.stack[self.sp] = self.pc;
+        self.sp += 1;
         self.pc = nnn;
     }
 }
