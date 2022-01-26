@@ -1,4 +1,6 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, mem};
+
+use rand::Rng;
 
 use crate::{display::Display, font::*, keypad::Keypad, speaker::Speaker};
 
@@ -68,10 +70,8 @@ impl Chip8 {
     pub fn cycle(&mut self) {
         // Fetch
         let opcode = self.fetch_opcode();
-
         // Increment the PC before we execute anything
         self.pc += 2;
-
         // Decode and execute
         self.execute_opcode(opcode)
     }
@@ -85,14 +85,14 @@ impl Chip8 {
 
     fn execute_opcode(&mut self, opcode: u16) {
         // Break each nibble from the 2 bytes instruction (4 nibbles)
-        let op_1 = ((opcode & 0xF000) >> 12) as u8;
-        let op_2 = ((opcode & 0x0F00) >> 8) as u8;
-        let op_3 = ((opcode & 0x00F0) >> 4) as u8;
-        let op_4 = (opcode & 0x000F) as u8;
+        let op_1 = ((opcode & 0xF000) >> 12) as usize;
+        let op_2 = ((opcode & 0x0F00) >> 8) as usize;
+        let op_3 = ((opcode & 0x00F0) >> 4) as usize;
+        let op_4 = (opcode & 0x000F) as usize;
 
         let nnn = (opcode & 0x0FFF) as usize; // 12-bit value, the lowest 12 bits of the instruction
-        let x = op_2 as usize; // 4-bit value, the lower 4 bits of the high byte of the instruction
-        let y = op_3 as usize; // 4-bit value, the upper 4 bits of the low byte of the instruction
+        let x = op_2; // 4-bit value, the lower 4 bits of the high byte of the instruction
+        let y = op_3; // 4-bit value, the upper 4 bits of the low byte of the instruction
         let n = op_4; // 4-bit value, the lowest 4 bits of the instruction
         let kk = (opcode & 0x00FF) as u8; // 8-bit value, the lowest 8 bits of the instruction
 
@@ -115,6 +115,11 @@ impl Chip8 {
             (0x8, _, _, 0x6) => self.op_8xy6(x),
             (0x8, _, _, 0x7) => self.op_8xy7(x, y),
             (0x8, _, _, 0xe) => self.op_8xye(x),
+            (0x9, _, _, 0) => self.op_9xy0(x, y),
+            (0xa, _, _, _) => self.op_annn(nnn),
+            (0xb, _, _, _) => self.op_bnnn(nnn),
+            (0xc, _, _, _) => self.op_cxkk(x, kk),
+            (0xd, _, _, _) => self.op_dxyn(x, y, n),
             _ => panic!("Unrecognized or unsupported opcode: {:#02x}", opcode),
         };
     }
@@ -146,6 +151,9 @@ impl Chip8 {
 
     /// Skip next instruction if Vx = kk
     fn op_3xkk(&mut self, x: usize, kk: u8) {
+        // Since our PC has already been incremented by 2 in Cycle(),
+        // we can just increment by 2 again to skip the next instruction
+        // This is valid for every function we do pc += 2
         if self.v[x] == kk {
             self.pc += 2;
         }
@@ -231,5 +239,39 @@ impl Chip8 {
     fn op_8xye(&mut self, x: usize) {
         self.v[0xf] = self.v[x] & 0x80; // 0x80 => 0b10000000
         self.v[x] <<= 1; // multiply by 2
+    }
+
+    /// Skip next instruction if Vx != Vy.
+    fn op_9xy0(&mut self, x: usize, y: usize) {
+        if self.v[x] != self.v[y] {
+            self.pc += 2;
+        }
+    }
+
+    /// Set I = nnn.
+    fn op_annn(&mut self, nnn: usize) {
+        self.i = nnn;
+    }
+
+    /// Jump to location nnn + V0.
+    fn op_bnnn(&mut self, nnn: usize) {
+        self.pc = nnn + self.v[0] as usize;
+    }
+
+    /// Set Vx = random byte AND kk.
+    fn op_cxkk(&mut self, x: usize, kk: u8) {
+        let random_byte: u8 = rand::thread_rng().gen();
+        self.v[x] = random_byte & kk;
+    }
+
+    /// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+    /// The interpreter reads n bytes from memory, starting at the address stored in I.
+    /// These bytes are then displayed as sprites on screen at coordinates (Vx, Vy).
+    fn op_dxyn(&mut self, x: usize, y: usize, n: usize) {
+        let start = self.i;
+        let end = start + n;
+        let sprite = &self.memory[start..end];
+
+        self.v[0xf] = self.display.draw(x, y, sprite)
     }
 }
