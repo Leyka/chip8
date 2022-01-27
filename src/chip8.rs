@@ -267,11 +267,17 @@ impl Chip8 {
     /// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
     /// The interpreter reads n bytes from memory, starting at the address stored in I.
     /// These bytes are then displayed as sprites on screen at coordinates (Vx, Vy).
+    /// Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0.
+    /// If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen.
     fn op_dxyn(&mut self, x: usize, y: usize, n: usize) {
         let start = self.i;
         let end = start + n;
-        let sprite = &self.memory[start..end];
+        let sprite_bytes = &self.memory[start..end];
 
-        self.v[0xf] = self.display.draw(x, y, sprite)
+        let has_collision = self
+            .display
+            .draw(self.v[x] as usize, self.v[y] as usize, sprite_bytes);
+
+        self.v[0xf] = has_collision as u8;
     }
 }
