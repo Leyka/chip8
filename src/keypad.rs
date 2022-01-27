@@ -11,10 +11,33 @@ Keypad       Keyboard
 +-+-+-+-+    +-+-+-+-+
 */
 
-pub struct Keypad {}
+// 16 keys from 0 to F
+const SIZE: usize = 16;
+
+pub struct Keypad {
+    keys: [bool; SIZE],
+}
 
 impl Keypad {
     pub fn new() -> Self {
-        Keypad {}
+        Keypad {
+            keys: [false; SIZE],
+        }
+    }
+
+    pub fn is_key_pressed(&mut self, key: usize) -> bool {
+        self.keys[key]
+    }
+
+    pub fn press_key(&mut self, key: usize) {
+        self.keys[key] = true;
+    }
+
+    pub fn release_key(&mut self, key: usize) {
+        self.keys[key] = false;
+    }
+
+    pub fn size(&mut self) -> usize {
+        SIZE
     }
 }

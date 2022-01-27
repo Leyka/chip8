@@ -1,13 +1,11 @@
-use std::{fs::File, io::Read, mem};
-
-use rand::Rng;
-
 use crate::{display::Display, font::*, keypad::Keypad, speaker::Speaker};
+use rand::Rng;
+use std::{fs::File, io::Read};
 
 // Chip8 has 4KB of RAM
 const MEMORY_SIZE: usize = 4096;
 // Chip8's memory from 0x000 to 0x1FF is reserved, so the ROM instructions must start at 0x200
-const START_ADDRESS: usize = 0x200;
+const START_ALLOWED_ADDRESS: usize = 0x200;
 
 pub struct Chip8 {
     // Program counter
@@ -32,7 +30,7 @@ pub struct Chip8 {
 impl Chip8 {
     pub fn new() -> Self {
         Chip8 {
-            pc: START_ADDRESS,
+            pc: START_ALLOWED_ADDRESS,
             v: [0; 16],
             i: 0,
             stack: [0; 16],
@@ -50,7 +48,7 @@ impl Chip8 {
     fn init_memory() -> [u8; MEMORY_SIZE] {
         let mut memory = [0; MEMORY_SIZE];
         for i in 0..FONT_SET.len() {
-            memory[FONT_SET_START_ADDRESS + i] = FONT_SET[i];
+            memory[i] = FONT_SET[i];
         }
         memory
     }
@@ -62,7 +60,7 @@ impl Chip8 {
 
         // Inject rom into memory
         for i in 0..buffer.len() {
-            self.memory[START_ADDRESS + i] = buffer[i];
+            self.memory[START_ALLOWED_ADDRESS + i] = buffer[i];
         }
     }
 
@@ -73,7 +71,16 @@ impl Chip8 {
         // Increment the PC before we execute anything
         self.pc += 2;
         // Decode and execute
-        self.execute_opcode(opcode)
+        self.execute_opcode(opcode);
+
+        // Decrement delay timer and sound timer if their values is above 0
+        // This will be done 60 times per second (60Hz)
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
     }
 
     fn fetch_opcode(&mut self) -> u16 {
@@ -120,6 +127,17 @@ impl Chip8 {
             (0xb, _, _, _) => self.op_bnnn(nnn),
             (0xc, _, _, _) => self.op_cxkk(x, kk),
             (0xd, _, _, _) => self.op_dxyn(x, y, n),
+            (0xe, _, 0x9, 0xe) => self.op_ex9e(x),
+            (0xe, _, 0xa, 0x1) => self.op_exa1(x),
+            (0xf, _, 0, 0x7) => self.op_fx07(x),
+            (0xf, _, 0, 0xa) => self.op_fx0a(x),
+            (0xf, _, 0x1, 0x5) => self.op_fx15(x),
+            (0xf, _, 0x1, 0x8) => self.op_fx18(x),
+            (0xf, _, 0x1, 0xe) => self.op_fx1e(x),
+            (0xf, _, 0x2, 0x9) => self.op_fx29(x),
+            (0xf, _, 0x3, 0x3) => self.op_fx33(x),
+            (0xf, _, 0x5, 0x5) => self.op_fx55(x),
+            (0xf, _, 0x6, 0x5) => self.op_fx65(x),
             _ => panic!("Unrecognized or unsupported opcode: {:#02x}", opcode),
         };
     }
@@ -279,5 +297,86 @@ impl Chip8 {
             .draw(self.v[x] as usize, self.v[y] as usize, sprite_bytes);
 
         self.v[0xf] = has_collision as u8;
+    }
+
+    /// Skip next instruction if key with the value of Vx is pressed.
+    fn op_ex9e(&mut self, x: usize) {
+        let key = self.v[x] as usize;
+        if self.keypad.is_key_pressed(key) {
+            self.pc += 2;
+        }
+    }
+
+    /// Skip next instruction if key with the value of Vx is not pressed.
+    fn op_exa1(&mut self, x: usize) {
+        let key = self.v[x] as usize;
+        if !self.keypad.is_key_pressed(key) {
+            self.pc += 2;
+        }
+    }
+
+    /// Set Vx = delay timer value.
+    fn op_fx07(&mut self, x: usize) {
+        self.v[x] = self.delay_timer;
+    }
+
+    /// Wait for a key press, store the value of the key in Vx.
+    fn op_fx0a(&mut self, x: usize) {
+        // Since PC is pre-incremented, here I will only increment PC if I actually have key press
+        self.pc -= 2;
+
+        for i in 0..self.keypad.size() {
+            if self.keypad.is_key_pressed(i) {
+                self.v[x] = i as u8;
+                self.pc += 2;
+                break;
+            }
+        }
+    }
+
+    /// Set delay timer = Vx.
+    fn op_fx15(&mut self, x: usize) {
+        self.delay_timer = self.v[x];
+    }
+
+    /// Set sound timer = Vx.
+    fn op_fx18(&mut self, x: usize) {
+        self.sound_timer = self.v[x];
+    }
+
+    /// Set I = I + Vx.
+    fn op_fx1e(&mut self, x: usize) {
+        self.i += self.v[x] as usize;
+    }
+
+    /// Set I = location of sprite for digit Vx.
+    /// We know that each digit takes 5 bytes each
+    fn op_fx29(&mut self, x: usize) {
+        let digit = self.v[x] as usize;
+        self.i = digit * 5;
+    }
+
+    /// Store BCD representation of Vx in memory locations I, I+1, and I+2.
+    // The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I,
+    // the tens digit at location I+1, and the ones digit at location I+2.
+    fn op_fx33(&mut self, x: usize) {
+        let vx = self.v[x];
+        self.memory[self.i] = vx / 100;
+        self.memory[self.i + 1] = (vx / 10) % 10;
+        self.memory[self.i + 2] = vx % 10;
+    }
+
+    /// Store registers V0 through Vx in memory starting at location I.
+    fn op_fx55(&mut self, x: usize) {
+        for idx in 0..x + 1 {
+            self.memory[self.i + idx] = self.v[idx];
+        }
+    }
+
+    /// Read registers V0 through Vx from memory starting at location I.
+    fn op_fx65(&mut self, x: usize) {
+        for idx in 0..x + 1 {
+            self.v[idx] = self.memory[self.i + idx];
+        }
     }
 }
