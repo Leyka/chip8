@@ -1,5 +1,6 @@
 use crate::{display::Display, font::*, keypad::Keypad, speaker::Speaker};
 use rand::Rng;
+use sdl2::Sdl;
 use std::{fs::File, io::Read};
 
 // Chip8 has 4KB of RAM
@@ -28,7 +29,7 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new() -> Self {
+    pub fn new(sdl: &Sdl) -> Self {
         Chip8 {
             pc: START_ALLOWED_ADDRESS,
             v: [0; 16],
@@ -38,7 +39,7 @@ impl Chip8 {
             memory: Self::init_memory(),
             delay_timer: 0,
             sound_timer: 0,
-            display: Display::new(),
+            display: Display::new(&sdl),
             keypad: Keypad::new(),
             speaker: Speaker::new(),
         }

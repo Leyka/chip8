@@ -1,3 +1,5 @@
+use sdl2::Sdl;
+
 // The original implementation of the Chip-8 language used a 64x32 monochrome pixels
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
@@ -8,7 +10,7 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new() -> Self {
+    pub fn new(sdl: &Sdl) -> Self {
         Display {
             memory: [[0; WIDTH]; HEIGHT],
         }
