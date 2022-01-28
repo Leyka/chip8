@@ -1,5 +1,7 @@
 extern crate sdl2;
 
+use std::{thread, time::Duration};
+
 use crate::chip8::Chip8;
 use sdl2::{event::Event, keyboard::Keycode};
 
@@ -9,11 +11,13 @@ mod font;
 mod keypad;
 mod speaker;
 
+const DELAY: Duration = Duration::from_millis(3);
+
 fn main() {
     let sdl_context = sdl2::init().unwrap();
 
     let mut chip8 = Chip8::new(&sdl_context);
-    chip8.load_rom(&"roms/TANK");
+    chip8.load_rom(&"roms/TETRIS");
 
     // Listen to events in the main loop
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -42,6 +46,9 @@ fn main() {
         }
 
         chip8.cycle();
+
         chip8.display.draw_screen();
+
+        thread::sleep(DELAY);
     }
 }
