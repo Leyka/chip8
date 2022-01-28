@@ -23,7 +23,7 @@ pub struct Chip8 {
     delay_timer: u8,
     sound_timer: u8,
     // Peripherals
-    display: Display,
+    pub display: Display,
     keypad: Keypad,
     speaker: Speaker,
 }
@@ -69,6 +69,7 @@ impl Chip8 {
     pub fn cycle(&mut self) {
         // Fetch
         let opcode = self.fetch_opcode();
+        println!("Opcode: {:#02x}", opcode);
         // Increment the PC before we execute anything
         self.pc += 2;
         // Decode and execute
