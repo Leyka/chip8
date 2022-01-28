@@ -1,6 +1,6 @@
 extern crate sdl2;
 
-use std::{thread, time::Duration};
+use std::{env, thread, time::Duration};
 
 use crate::chip8::Chip8;
 use sdl2::{event::Event, keyboard::Keycode};
@@ -14,10 +14,18 @@ mod speaker;
 const DELAY: Duration = Duration::from_millis(3);
 
 fn main() {
-    let sdl_context = sdl2::init().unwrap();
+    // 2nd arg is the rom name to load, default to TEST rom
+    let args: Vec<_> = env::args().collect();
+    let mut rom = "TEST";
+    if args.len() == 2 {
+        rom = &args[1];
+    }
 
+    let rom_path = format!("roms/{}", rom);
+    let sdl_context = sdl2::init().unwrap();
     let mut chip8 = Chip8::new(&sdl_context);
-    chip8.load_rom(&"roms/TETRIS");
+
+    chip8.load_rom(&rom_path);
 
     // Listen to events in the main loop
     let mut event_pump = sdl_context.event_pump().unwrap();
