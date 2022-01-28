@@ -200,7 +200,7 @@ impl Chip8 {
 
     /// Set Vx = Vx + kk
     fn op_7xkk(&mut self, x: usize, kk: u8) {
-        self.v[x] += kk;
+        self.v[x] = self.v[x].wrapping_add(kk);
     }
 
     /// Set Vx = Vy
@@ -227,16 +227,19 @@ impl Chip8 {
     /// This is an ADD with an overflow flag.
     /// If the sum is greater than what can fit into a byte (255), register VF will be set to 1 as a flag
     fn op_8xy4(&mut self, x: usize, y: usize) {
-        let sum = (self.v[x] + self.v[y]) as u16;
-        self.v[x] = (sum & 0xff) as u8;
-        self.v[0xf] = (sum > 255) as u8;
+        // We have a risk of overflow
+        let (new_vx, has_overflowed) = self.v[x].overflowing_add(self.v[y]);
+        self.v[0xf] = has_overflowed as u8;
+        self.v[x] = new_vx;
     }
 
     /// Set Vx = Vx - Vy, set VF = NOT borrow.
     /// If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results stored in Vx.
     fn op_8xy5(&mut self, x: usize, y: usize) {
-        self.v[0xf] = (self.v[x] > self.v[y]) as u8;
-        self.v[x] -= self.v[y];
+        // We also have risk of going under 0
+        let (new_vx, has_overflowed) = self.v[x].overflowing_sub(self.v[y]);
+        self.v[0xf] = has_overflowed as u8;
+        self.v[x] = new_vx;
     }
 
     /// Set Vx = Vx SHR 1
