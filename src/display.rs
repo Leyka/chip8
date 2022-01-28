@@ -18,7 +18,11 @@ impl Display {
     pub fn new(sdl: &Sdl) -> Self {
         let video_subsystem = sdl.video().unwrap();
         let window = video_subsystem
-            .window("Chip 8", (WIDTH * SCALE) as u32, (HEIGHT * SCALE) as u32)
+            .window(
+                "CHIP-8 Emulator",
+                (WIDTH * SCALE) as u32,
+                (HEIGHT * SCALE) as u32,
+            )
             .position_centered()
             .opengl()
             .build()
