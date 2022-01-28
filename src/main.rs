@@ -1,6 +1,6 @@
 extern crate sdl2;
 
-use std::{env, thread, time::Duration};
+use std::env;
 
 use crate::chip8::Chip8;
 use sdl2::{event::Event, keyboard::Keycode};
@@ -11,11 +11,11 @@ mod font;
 mod keypad;
 mod speaker;
 
-const DELAY: Duration = Duration::from_millis(1);
+const CYCLES_PER_SEC: u8 = 10; // Sweet spot?
 
 fn main() {
     // 2nd arg is the rom name to load, default to TEST rom
-    let args: Vec<_> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     let mut rom = "TEST";
     if args.len() == 2 {
         rom = &args[1];
@@ -31,6 +31,8 @@ fn main() {
     // Listen to events in the main loop
     let mut event_pump = sdl_context.event_pump().unwrap();
     'main: loop {
+        chip8.decrement_timers();
+
         for evt in event_pump.poll_iter() {
             match evt {
                 Event::Quit { .. }
@@ -54,10 +56,10 @@ fn main() {
             }
         }
 
-        chip8.cycle();
+        for _ in 0..CYCLES_PER_SEC {
+            chip8.cycle();
+        }
 
         chip8.display.draw_screen();
-
-        thread::sleep(DELAY);
     }
 }

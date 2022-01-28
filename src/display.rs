@@ -11,7 +11,6 @@ const ON_COLOR: Color = Color::RGB(22, 22, 22);
 
 pub struct Display {
     memory: [[u8; WIDTH]; HEIGHT],
-    has_memory_changed: bool,
     canvas: Canvas<Window>,
 }
 
@@ -35,14 +34,12 @@ impl Display {
 
         Display {
             memory: [[0; WIDTH]; HEIGHT],
-            has_memory_changed: false,
             canvas,
         }
     }
 
     pub fn clear(&mut self) {
         self.memory = [[0; WIDTH]; HEIGHT];
-        self.has_memory_changed = true;
     }
 
     /// Draws all pixels from sprite into memory buffer and returns true if collision
@@ -70,15 +67,10 @@ impl Display {
             }
         }
 
-        self.has_memory_changed = true;
         collision
     }
 
     pub fn draw_screen(&mut self) {
-        if !self.has_memory_changed {
-            return;
-        }
-
         // Clear previous canvas
         self.canvas.set_draw_color(OFF_COLOR);
         self.canvas.clear();
@@ -100,6 +92,5 @@ impl Display {
         }
 
         self.canvas.present();
-        self.has_memory_changed = false;
     }
 }

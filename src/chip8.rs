@@ -73,7 +73,9 @@ impl Chip8 {
         self.pc += 2;
         // Decode and execute
         self.execute_opcode(opcode);
+    }
 
+    pub fn decrement_timers(&mut self) {
         // Decrement delay timer and sound timer if their values is above 0
         // This will be done 60 times per second (60Hz)
         if self.delay_timer > 0 {
