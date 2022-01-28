@@ -2,8 +2,6 @@
 
 CHIP-8 emulator written in Rust for educational purpose.
 
-![Demo GIF](doc/demo.gif)
-
 ## Dependencies
 
 - [SDL2](https://github.com/Rust-SDL2/rust-sdl2)
