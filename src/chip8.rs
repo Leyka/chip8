@@ -29,7 +29,7 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new(sdl: &Sdl) -> Self {
+    pub fn new(sdl: &Sdl, window_title: &str) -> Self {
         Chip8 {
             pc: START_ALLOWED_ADDRESS,
             v: [0; 16],
@@ -39,7 +39,7 @@ impl Chip8 {
             memory: Self::init_memory(),
             delay_timer: 0,
             sound_timer: 0,
-            display: Display::new(&sdl),
+            display: Display::new(sdl, window_title),
             keypad: Keypad::new(),
             speaker: Speaker::new(),
         }
@@ -251,8 +251,9 @@ impl Chip8 {
     /// Set Vx = Vy - Vx, set VF = NOT borrow
     /// If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.
     fn op_8xy7(&mut self, x: usize, y: usize) {
-        self.v[0xf] = (self.v[y] > self.v[x]) as u8;
-        self.v[x] = self.v[y] - self.v[x];
+        let (new_vx, has_overflowed) = self.v[y].overflowing_sub(self.v[x]);
+        self.v[0xf] = has_overflowed as u8;
+        self.v[x] = new_vx;
     }
 
     /// Set Vx = Vx SHL 1

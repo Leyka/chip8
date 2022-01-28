@@ -6,8 +6,8 @@ const HEIGHT: usize = 32;
 const SCALE: usize = 15;
 
 // Colors
-const BLACK_COLOR: Color = Color::RGB(0, 0, 0);
-const WHITE_COLOR: Color = Color::RGB(255, 255, 255);
+const OFF_COLOR: Color = Color::RGB(248, 171, 18);
+const ON_COLOR: Color = Color::RGB(22, 22, 22);
 
 pub struct Display {
     memory: [[u8; WIDTH]; HEIGHT],
@@ -16,11 +16,11 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new(sdl: &Sdl) -> Self {
+    pub fn new(sdl: &Sdl, window_title: &str) -> Self {
         let video_subsystem = sdl.video().unwrap();
         let window = video_subsystem
             .window(
-                "CHIP-8 Emulator",
+                window_title,
                 (WIDTH * SCALE) as u32,
                 (HEIGHT * SCALE) as u32,
             )
@@ -29,7 +29,7 @@ impl Display {
             .build()
             .unwrap();
 
-        let mut canvas = window.into_canvas().build().unwrap();
+        let mut canvas = window.into_canvas().present_vsync().build().unwrap();
         canvas.clear();
         canvas.present();
 
@@ -79,11 +79,11 @@ impl Display {
             return;
         }
 
-        // Clear previous canvas by setting screen to black
-        self.canvas.set_draw_color(BLACK_COLOR);
+        // Clear previous canvas
+        self.canvas.set_draw_color(OFF_COLOR);
         self.canvas.clear();
-        // Draw white pixel any time we have a pixel at true
-        self.canvas.set_draw_color(WHITE_COLOR);
+        // Draw pixel any time we have a pixel at true
+        self.canvas.set_draw_color(ON_COLOR);
         for x in 0..WIDTH {
             for y in 0..HEIGHT {
                 if self.memory[y][x] == 1 {

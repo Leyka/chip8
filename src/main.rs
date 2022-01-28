@@ -11,7 +11,7 @@ mod font;
 mod keypad;
 mod speaker;
 
-const DELAY: Duration = Duration::from_millis(3);
+const DELAY: Duration = Duration::from_millis(1);
 
 fn main() {
     // 2nd arg is the rom name to load, default to TEST rom
@@ -23,7 +23,8 @@ fn main() {
 
     let rom_path = format!("roms/{}", rom);
     let sdl_context = sdl2::init().unwrap();
-    let mut chip8 = Chip8::new(&sdl_context);
+    let window_title = format!("{} - CHIP8", rom);
+    let mut chip8 = Chip8::new(&sdl_context, &window_title);
 
     chip8.load_rom(&rom_path);
 
