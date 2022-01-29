@@ -47,7 +47,7 @@ impl Display {
     pub fn draw(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
         let mut collision = false;
 
-        let width = 8; // Sprite always takes 8 pixels
+        let width = 8; // Sprite always take 8 pixels
         let height = sprite.len();
         for row in 0..height {
             // Loop through each pixel from that row and check if pixel is ON, one by one

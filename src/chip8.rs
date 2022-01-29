@@ -41,7 +41,7 @@ impl Chip8 {
             sound_timer: 0,
             display: Display::new(sdl, window_title),
             keypad: Keypad::new(),
-            speaker: Speaker::new(),
+            speaker: Speaker::new(sdl),
         }
     }
 
@@ -83,6 +83,14 @@ impl Chip8 {
         }
         if self.sound_timer > 0 {
             self.sound_timer -= 1;
+        }
+    }
+
+    pub fn handle_sound(&mut self) {
+        if self.sound_timer > 0 {
+            self.speaker.emit_sound();
+        } else {
+            self.speaker.stop_emitting();
         }
     }
 

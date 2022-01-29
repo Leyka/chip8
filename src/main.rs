@@ -31,8 +31,6 @@ fn main() {
     // Listen to events in the main loop
     let mut event_pump = sdl_context.event_pump().unwrap();
     'main: loop {
-        chip8.decrement_timers();
-
         for evt in event_pump.poll_iter() {
             match evt {
                 Event::Quit { .. }
@@ -60,6 +58,8 @@ fn main() {
             chip8.cycle();
         }
 
+        chip8.decrement_timers();
+        chip8.handle_sound();
         chip8.display.draw_screen();
     }
 }
