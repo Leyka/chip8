@@ -2,9 +2,19 @@
 
 CHIP-8 emulator written in Rust for educational purpose.
 
+![demo](images/demo.gif)
+
 ## Dependencies
 
 - [SDL2](https://github.com/Rust-SDL2/rust-sdl2)
+
+## Usage
+
+```
+cargo run {ROM}
+```
+
+Replace _{ROM}_ by one of the available roms (e.g. `INVADERS`)
 
 ## References
 

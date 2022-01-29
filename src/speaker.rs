@@ -1,5 +1,4 @@
-// This code is mainly taken from this site:
-// https://nukep.github.io/glium-sdl2/sdl2/audio/index.html
+// Reference: https://nukep.github.io/glium-sdl2/sdl2/audio/index.html
 
 use sdl2::{
     audio::{AudioCallback, AudioDevice, AudioSpecDesired},
